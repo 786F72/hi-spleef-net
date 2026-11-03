@@ -30,6 +30,19 @@
         grid-template-columns: repeat(2, max-content);
         gap: 1rem;
       }
+
+      .domains {
+        display: grid;
+        grid-template-columns: repeat(4, max-content);
+        gap: 0.75rem 1.5rem;
+        margin-top: 1.5rem;
+      }
+
+      @media (max-width: 36rem) {
+        .domains {
+          grid-template-columns: repeat(2, max-content);
+        }
+      }
     </style>
   </head>
   <body>
@@ -38,10 +51,32 @@
       <a href="/bip39">BIP39</a>
       <a href="/totp">TOTP</a>
     </nav>
+    <div class="domains"></div>
     <script>
+      const domains = ['minecat.net', 'lattices.net', 'lattices.org', 'ollvm.com', 'pkey.org', 'sad.pet', 'spleef.net'];
+      const used = new Set();
+
+      function randomNumber() {
+        let number;
+        do {
+          number = (100000000000n + crypto.getRandomValues(new BigUint64Array(1))[0] % 900000000000n).toString();
+        } while (used.has(number));
+        used.add(number);
+        return number;
+      }
+
+      for (const domain of domains) {
+        const link = document.createElement('a');
+        link.href = `https://${randomNumber()}.${domain}/${randomNumber()}`;
+        link.textContent = domain;
+        link.dataset.faviconDomain = domain;
+        document.querySelector('.domains').append(link);
+      }
+
       for (const link of document.querySelectorAll('a')) {
         const url = new URL(link.href);
-        const domain = url.protocol === 'mailto:' ? url.pathname.split('@')[1] : url.hostname;
+        const domain = link.dataset.faviconDomain ||
+          (url.protocol === 'mailto:' ? url.pathname.split('@')[1] : url.hostname);
         if (!domain) continue;
         const icon = new Image(16, 16);
         icon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
