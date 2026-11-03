@@ -21,13 +21,22 @@ export default {
         headers: { 'Content-Type': 'text/plain; charset=utf-8' }
       });
     }
-    if (host === domain && url.pathname === '/babel') {
+    if (host === domain && url.pathname === '/about/babel') {
       return new Response(request.method === 'HEAD' ? null : landing, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' }
       });
     }
 
-    const seed = new DataView(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(url.href)));
+    if (url.pathname === '/b' || url.pathname.startsWith('/b/')) {
+      url.pathname = '/babel' + url.pathname.slice(2);
+      return new Response(null, {
+        status: 301,
+        headers: { Location: url.href, 'X-Robots-Tag': 'noindex, nofollow' }
+      });
+    }
+
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(url.href));
+    const seed = new DataView(digest);
     let a = seed.getUint32(0);
     let b = seed.getUint32(4);
     let c = seed.getUint32(8);
@@ -51,15 +60,15 @@ export default {
       const pick = next() % (index + 1);
       [targets[index], targets[pick]] = [targets[pick], targets[index]];
     }
-    const links = targets.map((target, index) => {
+    const destinations = targets.map(target => {
       const host = random(63, 'abcdefghijklmnopqrstuvwxyz0123456789');
-      const prefix = `https://${host}.${target}/b/`;
-      const path = random(16384 - prefix.length, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
-      return `<a href="${prefix}${path}" rel="nofollow"><img src="https://www.google.com/s2/favicons?domain=${target}&amp;sz=32" alt="" width="16" height="16">Page ${index + 1}</a>`;
-    }).join('\n');
+      const prefix = `https://${host}.${target}/babel/`;
+      return prefix + random(16384 - prefix.length, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
+    });
     const text = Array.from({ length: 4096 }, (_, index) => {
       const word = words[next() & 2047];
-      return index % 2 ? `<span class="shade">${word}</span>` : word;
+      const shade = index % 2 ? ' shade' : '';
+      return `<a class="word${shade}" data-page="${index % 7}" rel="nofollow">${word}</a>`;
     }).join('<span class="space"> </span><wbr>');
     const html = `<!doctype html>
 <html lang="en">
@@ -82,6 +91,12 @@ export default {
         overflow-wrap: anywhere;
       }
 
+      .word {
+        color: inherit;
+        text-decoration: none;
+        cursor: default;
+      }
+
       .shade {
         background: #efefef;
         color: #efefef;
@@ -92,24 +107,16 @@ export default {
         white-space: pre;
       }
 
-      nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
-
-      a {
-        color: inherit;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-      }
     </style>
   </head>
   <body>
-    <nav>${links}</nav>
     <main>${text}</main>
+    <script>
+      const destinations = ${JSON.stringify(destinations)};
+      for (const link of document.querySelectorAll('main a')) {
+        link.href = destinations[Number(link.dataset.page)];
+      }
+    </script>
   </body>
 </html>`;
     return new Response(request.method === 'HEAD' ? null : html, {
