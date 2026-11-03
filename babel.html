@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Babel: procedural word pages | Alex Rother</title>
+    <meta name="description" content="Babel is an experiment in procedural text and linked URL spaces using the BIP39 English word list.">
+    <link rel="canonical" href="https://minecat.net/babel">
+    <style>
+      body {
+        max-width: 48rem;
+        margin: 1rem;
+        font: clamp(12px, 3vw, 16px)/1.5 Arial, sans-serif;
+      }
+
+      h1 { font-size: 1.5em; }
+      h2 { font-size: 1.15em; }
+      nav { display: flex; gap: 1rem; }
+      a { display: inline-flex; align-items: center; gap: 0.35rem; }
+      a img { width: 1rem; height: 1rem; }
+    </style>
+  </head>
+  <body>
+    <nav><a href="/">Home</a><a href="/bip39">BIP39</a><a href="/totp">TOTP</a><a href="/babel">Babel</a></nav>
+    <main>
+      <h1>Babel</h1>
+      <p>Babel is an experiment in procedural text generation and linked URL spaces. Each generated page contains 4,096 randomly selected entries from the English BIP39 word list. The output is a sequence of dictionary entries rather than a BIP39 recovery mnemonic.</p>
+      <h2>Page generation</h2>
+      <p>Each response includes seven links distributed across the project's seven domains in a random order. Destinations use a random 63-character alphanumeric subdomain and a random alphanumeric path after <code>/b/</code>. Each complete URL occupies a 16 KB budget.</p>
+      <p>Following a link generates another page. Page content and links are generated afresh for each request. Generated pages display white words on a white background, separated by black-highlighted spaces.</p>
+      <h2>Search indexing</h2>
+      <p>This description is the stable project page. Generated word pages carry search-indexing and link-following exclusion directives.</p>
+      <p><a href="/b/start" rel="nofollow">Open Babel</a></p>
+    </main>
+    <script>
+      for (const link of document.querySelectorAll('a')) {
+        const domain = new URL(link.href).hostname;
+        const icon = new Image(16, 16);
+        icon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+        icon.alt = '';
+        icon.addEventListener('error', () => icon.remove());
+        link.prepend(icon);
+      }
+    </script>
+  </body>
+</html>

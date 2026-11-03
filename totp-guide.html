@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TOTP: time-based one-time passwords | Alex Rother</title>
+    <meta name="description" content="An explanation of time-based one-time passwords, shared secrets, time steps, and the local TOTP tool.">
+    <link rel="canonical" href="https://minecat.net/guides/totp">
+    <style>
+      body {
+        max-width: 48rem;
+        margin: 1rem;
+        font: clamp(12px, 3vw, 16px)/1.5 Arial, sans-serif;
+      }
+
+      h1 { font-size: 1.5em; }
+      h2 { font-size: 1.15em; }
+      nav { display: flex; gap: 1rem; }
+      a { display: inline-flex; align-items: center; gap: 0.35rem; }
+      a img { width: 1rem; height: 1rem; }
+    </style>
+  </head>
+  <body>
+    <nav><a href="/">Home</a><a href="/bip39">BIP39</a><a href="/totp">TOTP</a><a href="/babel">Babel</a></nav>
+    <main>
+      <h1>Time-based one-time passwords</h1>
+      <p>The Time-Based One-Time Password algorithm (TOTP) derives a short authentication code from a shared secret and a time counter. It extends the HMAC-Based One-Time Password algorithm by replacing its event counter with a value calculated from the current time.</p>
+      <h2>Time steps</h2>
+      <p>RFC 6238 recommends a default interval of 30 seconds. The client and verifier calculate a counter from the Unix time and the selected interval. Their clocks must be sufficiently synchronized for the verifier to accept the generated code.</p>
+      <h2>Browser implementation</h2>
+      <p>The <a href="/totp">TOTP tool</a> accepts named Base32 secrets and generates six-digit codes using HMAC-SHA-1 and 30-second intervals. A circular indicator shows the time left in the current interval.</p>
+      <p>Accounts are stored in local browser storage for the domain being used. Export produces a JSON file containing the account names and readable secrets. Import appends new secrets and skips duplicates without replacing existing accounts.</p>
+      <h2>Reference</h2>
+      <p><a href="https://datatracker.ietf.org/doc/html/rfc6238">RFC 6238: Time-Based One-Time Password Algorithm</a></p>
+    </main>
+    <script>
+      for (const link of document.querySelectorAll('a')) {
+        const domain = new URL(link.href).hostname;
+        const icon = new Image(16, 16);
+        icon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+        icon.alt = '';
+        icon.addEventListener('error', () => icon.remove());
+        link.prepend(icon);
+      }
+    </script>
+  </body>
+</html>

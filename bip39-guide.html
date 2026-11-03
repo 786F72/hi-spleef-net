@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BIP39: mnemonic representation and generation | Alex Rother</title>
+    <meta name="description" content="An explanation of BIP39 entropy, checksums, word lists, and the browser-based 24-word generator.">
+    <link rel="canonical" href="https://minecat.net/guides/bip39">
+    <style>
+      body {
+        max-width: 48rem;
+        margin: 1rem;
+        font: clamp(12px, 3vw, 16px)/1.5 Arial, sans-serif;
+      }
+
+      h1 { font-size: 1.5em; }
+      h2 { font-size: 1.15em; }
+      nav { display: flex; gap: 1rem; }
+      a { display: inline-flex; align-items: center; gap: 0.35rem; }
+      a img { width: 1rem; height: 1rem; }
+    </style>
+  </head>
+  <body>
+    <nav><a href="/">Home</a><a href="/bip39">BIP39</a><a href="/totp">TOTP</a><a href="/babel">Babel</a></nav>
+    <main>
+      <h1>BIP39</h1>
+      <p>Bitcoin Improvement Proposal 39 (BIP39) describes a method for representing binary entropy as a sequence of words. Software can use the resulting mnemonic, together with an optional passphrase, to derive a seed for a deterministic wallet.</p>
+      <h2>Word list and checksum</h2>
+      <p>The English word list contains 2,048 entries. Each word represents 11 bits. A 24-word mnemonic encodes 256 bits of entropy and an eight-bit checksum derived from SHA-256, producing 264 bits in total.</p>
+      <h2>Browser implementation</h2>
+      <p>The <a href="/bip39">BIP39 generator</a> obtains 32 random bytes through the browser's Web Crypto API and computes the checksum locally. It displays the resulting words in four columns and six rows. Copying selected words produces text with a single space between words.</p>
+      <p>Reloading the page generates a new mnemonic.</p>
+      <h2>Reference</h2>
+      <p><a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">BIP39 specification</a></p>
+    </main>
+    <script>
+      for (const link of document.querySelectorAll('a')) {
+        const domain = new URL(link.href).hostname;
+        const icon = new Image(16, 16);
+        icon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+        icon.alt = '';
+        icon.addEventListener('error', () => icon.remove());
+        link.prepend(icon);
+      }
+    </script>
+  </body>
+</html>
