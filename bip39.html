@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>BIP39</title>
+<body>
+<script>
+async function generateMnemonic(wordlist) {
+  if (wordlist.length !== 2048) throw new Error('Invalid wordlist');
+  const entropy = crypto.getRandomValues(new Uint8Array(32));
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', entropy));
+  const bits = [...entropy, hash[0]]
+    .map(byte => byte.toString(2).padStart(8, '0')).join('');
+  return bits.match(/.{11}/g)
+    .map(bits => wordlist[parseInt(bits, 2)]).join(' ');
+}
+
+(async () => {
+  try {
+    const response = await fetch('/bip39-wordlist');
+    if (!response.ok) throw new Error('Could not load wordlist');
+    const wordlist = (await response.text()).trim().split(/\s+/);
+    document.body.textContent = await generateMnemonic(wordlist);
+  } catch {
+    document.body.textContent = 'Unable to generate words. Please reload.';
+  }
+})();
+</script>
+</body>
+</html>
