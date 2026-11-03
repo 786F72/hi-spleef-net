@@ -17,7 +17,7 @@
       }
 
       form {
-        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: end;
         max-width: 36rem;
       }
@@ -35,7 +35,7 @@
 
       article {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto auto auto;
+        grid-template-columns: minmax(0, 1fr) auto auto auto auto;
         align-items: center;
         gap: 0.75rem;
         padding: 0.5rem;
@@ -51,10 +51,16 @@
         width: fit-content;
       }
 
-      #transfer {
+      .actions {
         display: flex;
+        grid-column: 1 / -1;
         gap: 0.5rem;
-        margin-top: 1rem;
+      }
+
+      form input:not([type="file"]) {
+        box-sizing: border-box;
+        min-width: 0;
+        width: 100%;
       }
 
       strong {
@@ -73,13 +79,13 @@
     <form id="add-form">
       <label>Name <input name="name" required autocomplete="off"></label>
       <label>Base32 secret <input name="secret" required autocomplete="off" spellcheck="false"></label>
-      <button>Add</button>
+      <div class="actions">
+        <button>Add</button>
+        <button id="import-button" type="button">Import</button>
+        <button id="export-button" type="button">Export</button>
+        <input id="import-file" type="file" accept=".json,application/json" hidden>
+      </div>
     </form>
-    <div id="transfer">
-      <button id="import-button" type="button">Import</button>
-      <button id="export-button" type="button">Export</button>
-      <input id="import-file" type="file" accept=".json,application/json" hidden>
-    </div>
     <p id="message" role="status"></p>
     <main id="codes"></main>
     <script type="module">
@@ -88,6 +94,7 @@
       const message = document.querySelector('#message');
       const list = document.querySelector('#codes');
       const importFile = document.querySelector('#import-file');
+      const exportButton = document.querySelector('#export-button');
       let entries;
 
       try {
@@ -137,10 +144,12 @@
 
       function render() {
         list.replaceChildren();
+        exportButton.disabled = entries.length === 0;
         for (const entry of entries) {
           const card = document.createElement('article');
           const name = document.createElement('strong');
           const code = document.createElement('code');
+          const time = document.createElement('span');
           const copy = document.createElement('button');
           const remove = document.createElement('button');
           name.textContent = entry.name;
@@ -166,9 +175,10 @@
             entries = next;
             render();
           });
-          card.append(name, code, copy, remove);
+          card.append(name, code, time, copy, remove);
           list.append(card);
           entry.code = code;
+          entry.time = time;
           entry.counter = -1;
         }
         update();
@@ -176,7 +186,9 @@
 
       async function update() {
         const counter = Math.floor(Date.now() / 30000);
+        const remaining = 30 - Math.floor(Date.now() / 1000) % 30;
         for (const entry of entries) {
+          entry.time.textContent = `${remaining}s`;
           if (entry.counter === counter) continue;
           entry.counter = counter;
           try {
@@ -213,13 +225,18 @@
         try {
           const data = JSON.parse(await importFile.files[0].text());
           if (data.version !== 1 || !Array.isArray(data.entries)) throw new Error();
-          const incoming = data.entries.map(item => {
+          const seen = new Set(entries.map(item => item.secret.toUpperCase()
+            .replace(/[\s-]/g, '').replace(/=+$/, '')));
+          const incoming = [];
+          for (const item of data.entries) {
             if (typeof item.name !== 'string' || !item.name.trim() ||
                 typeof item.secret !== 'string') throw new Error();
-            const secret = item.secret.toUpperCase().replace(/[\s-]/g, '');
+            const secret = item.secret.toUpperCase().replace(/[\s-]/g, '').replace(/=+$/, '');
             decodeBase32(secret);
-            return { id: crypto.randomUUID(), name: item.name.trim(), secret };
-          });
+            if (seen.has(secret)) continue;
+            seen.add(secret);
+            incoming.push({ id: crypto.randomUUID(), name: item.name.trim(), secret });
+          }
           const next = [...entries, ...incoming];
           save(next);
           entries = next;
@@ -231,7 +248,8 @@
         importFile.value = '';
       });
 
-      document.querySelector('#export-button').addEventListener('click', () => {
+      exportButton.addEventListener('click', () => {
+        if (!entries.length) return;
         const data = { version: 1, entries: entries.map(({ name, secret }) =>
           ({ name, secret })) };
         const file = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
