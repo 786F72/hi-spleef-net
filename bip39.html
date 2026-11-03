@@ -3,6 +3,20 @@
   <head>
     <meta charset="utf-8">
     <title>BIP39</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body {
+        margin: 1.5rem;
+        font: clamp(12px, 3vw, 16px)/1.5 system-ui, sans-serif;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        max-width: 32rem;
+      }
+    </style>
   </head>
   <body>
     <script type="module">
@@ -19,9 +33,24 @@
           .map(byte => byte.toString(2).padStart(8, '0'))
           .join('');
 
-        document.body.textContent = bits.match(/.{11}/g)
-          .map(chunk => words[parseInt(chunk, 2)])
-          .join(' ');
+        const mnemonic = bits.match(/.{11}/g)
+          .map(chunk => words[parseInt(chunk, 2)]);
+        const grid = document.createElement('main');
+
+        mnemonic.forEach((word, index) => {
+          if (index) grid.append(' ');
+          const cell = document.createElement('span');
+          cell.textContent = word;
+          grid.append(cell);
+        });
+
+        document.body.replaceChildren(grid);
+        document.addEventListener('copy', event => {
+          const text = window.getSelection().toString().trim().replace(/\s+/g, ' ');
+          if (!text) return;
+          event.clipboardData.setData('text/plain', text);
+          event.preventDefault();
+        });
       } catch {
         document.body.textContent = 'Unable to generate words. Please reload.';
       }
