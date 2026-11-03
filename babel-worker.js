@@ -37,6 +37,8 @@ export default {
     <style>
       body {
         margin: 1rem;
+        background: #000;
+        color: #fff;
         font: clamp(12px, 3vw, 16px)/1.4 Arial, sans-serif;
       }
 
@@ -48,6 +50,7 @@ export default {
       }
 
       a {
+        color: inherit;
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
