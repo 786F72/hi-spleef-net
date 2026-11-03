@@ -21,8 +21,13 @@ export default {
       return value;
     }
 
-    const links = Array.from({ length: 7 }, (_, index) =>
-      `<a href="https://${number()}.${domain}/b/${number()}"><img src="https://www.google.com/s2/favicons?domain=${domain}&amp;sz=32" alt="" width="16" height="16">Page ${index + 1}</a>`).join('\n');
+    const targets = [...domains];
+    for (let index = targets.length - 1; index > 0; index--) {
+      const pick = crypto.getRandomValues(new Uint32Array(1))[0] % (index + 1);
+      [targets[index], targets[pick]] = [targets[pick], targets[index]];
+    }
+    const links = targets.map((target, index) =>
+      `<a href="https://${number()}.${target}/b/${number()}"><img src="https://www.google.com/s2/favicons?domain=${target}&amp;sz=32" alt="" width="16" height="16">Page ${index + 1}</a>`).join('\n');
     const text = Array.from(crypto.getRandomValues(new Uint16Array(4096)), value => words[value & 2047]).join(' ');
     const html = `<!doctype html>
 <html lang="en">
