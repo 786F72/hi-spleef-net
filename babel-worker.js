@@ -79,7 +79,7 @@ export default {
     <meta name="robots" content="noindex, nofollow">
     <style>
       body {
-        margin: 1rem 1rem 1rem 0;
+        margin: 0 1rem 1rem 0;
         background: #fff;
         color: #000;
         font: clamp(12px, 3vw, 16px)/1.4 Arial, sans-serif;
