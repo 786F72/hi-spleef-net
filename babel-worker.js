@@ -11,14 +11,9 @@ export default {
     if (!['GET', 'HEAD'].includes(request.method))
       return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD' } });
 
-    const used = new Set();
-    function number() {
-      let value;
-      do {
-        value = (100000000000n + crypto.getRandomValues(new BigUint64Array(1))[0] % 900000000000n).toString();
-      } while (used.has(value));
-      used.add(value);
-      return value;
+    function random(length, alphabet) {
+      return Array.from(crypto.getRandomValues(new Uint8Array(length)),
+        value => alphabet[value % alphabet.length]).join('');
     }
 
     const targets = [...domains];
@@ -26,8 +21,12 @@ export default {
       const pick = crypto.getRandomValues(new Uint32Array(1))[0] % (index + 1);
       [targets[index], targets[pick]] = [targets[pick], targets[index]];
     }
-    const links = targets.map((target, index) =>
-      `<a href="https://${number()}.${target}/b/${number()}"><img src="https://www.google.com/s2/favicons?domain=${target}&amp;sz=32" alt="" width="16" height="16">Page ${index + 1}</a>`).join('\n');
+    const links = targets.map((target, index) => {
+      const host = random(63, 'abcdefghijklmnopqrstuvwxyz0123456789');
+      const prefix = `https://${host}.${target}/b/`;
+      const path = random(16384 - prefix.length, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
+      return `<a href="${prefix}${path}"><img src="https://www.google.com/s2/favicons?domain=${target}&amp;sz=32" alt="" width="16" height="16">Page ${index + 1}</a>`;
+    }).join('\n');
     const text = Array.from(crypto.getRandomValues(new Uint16Array(4096)), value => words[value & 2047]).join(' ');
     const html = `<!doctype html>
 <html lang="en">
