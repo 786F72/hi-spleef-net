@@ -16,7 +16,7 @@ export default {
     if (url.pathname === '/robots.txt') {
       const robots = host === domain
         ? 'User-agent: *\nAllow: /\nSitemap: https://minecat.net/sitemap.xml\n'
-        : 'User-agent: *\nAllow: /b/\nDisallow: /\n';
+        : 'User-agent: *\nAllow: /b\nDisallow: /\n';
       return new Response(request.method === 'HEAD' ? null : robots, {
         headers: { 'Content-Type': 'text/plain; charset=utf-8' }
       });
@@ -58,6 +58,9 @@ export default {
       return `<a href="${prefix}${path}" rel="nofollow"><img src="https://www.google.com/s2/favicons?domain=${target}&amp;sz=32" alt="" width="16" height="16">Page ${index + 1}</a>`;
     }).join('\n');
     const text = Array.from({ length: 4096 }, () => words[next() & 2047]).join('<span class="space"> </span><wbr>');
+    const address = url.href.replace(/[&<>"']/g, character => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[character]);
     const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -71,6 +74,11 @@ export default {
         background: #fff;
         color: #000;
         font: clamp(12px, 3vw, 16px)/1.4 Arial, sans-serif;
+      }
+
+      .address {
+        margin: 0 0 1.5rem;
+        overflow-wrap: anywhere;
       }
 
       main {
@@ -101,6 +109,7 @@ export default {
   </head>
   <body>
     <nav>${links}</nav>
+    <p class="address">${address}</p>
     <main>${text}</main>
   </body>
 </html>`;
