@@ -52,6 +52,13 @@
         width: fit-content;
       }
 
+      article button {
+        width: 1.75rem;
+        height: 1.75rem;
+        padding: 0;
+        font-family: monospace;
+      }
+
       input::placeholder {
         color: #888;
       }
@@ -222,7 +229,7 @@
           time.className = 'timer';
           time.setAttribute('role', 'img');
           time.style.animationDelay = `-${Date.now() % 30000 / 1000}s`;
-          copy.textContent = '⧉';
+          copy.textContent = 'C';
           copy.type = 'button';
           copy.title = 'Copy code';
           copy.setAttribute('aria-label', `Copy code for ${entry.name}`);
@@ -233,7 +240,7 @@
               message.textContent = 'Could not copy code.';
             }
           });
-          remove.textContent = '×';
+          remove.textContent = 'X';
           remove.type = 'button';
           remove.title = 'Remove';
           remove.setAttribute('aria-label', `Remove ${entry.name}`);
