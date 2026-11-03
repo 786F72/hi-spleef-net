@@ -63,6 +63,13 @@
         width: 100%;
       }
 
+      .timer {
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background: conic-gradient(#555 var(--progress), #ddd 0);
+      }
+
       strong {
         overflow: hidden;
         text-overflow: ellipsis;
@@ -154,6 +161,8 @@
           const remove = document.createElement('button');
           name.textContent = entry.name;
           code.textContent = '······';
+          time.className = 'timer';
+          time.setAttribute('role', 'img');
           copy.textContent = '⧉';
           copy.type = 'button';
           copy.title = 'Copy code';
@@ -175,7 +184,7 @@
             entries = next;
             render();
           });
-          card.append(name, code, time, copy, remove);
+          card.append(name, time, code, copy, remove);
           list.append(card);
           entry.code = code;
           entry.time = time;
@@ -188,7 +197,8 @@
         const counter = Math.floor(Date.now() / 30000);
         const remaining = 30 - Math.floor(Date.now() / 1000) % 30;
         for (const entry of entries) {
-          entry.time.textContent = `${remaining}s`;
+          entry.time.style.setProperty('--progress', `${remaining / 30 * 100}%`);
+          entry.time.setAttribute('aria-label', `${remaining} seconds left`);
           if (entry.counter === counter) continue;
           entry.counter = counter;
           try {
