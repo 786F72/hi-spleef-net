@@ -31,11 +31,15 @@
         gap: 1rem;
       }
 
+      .domain-label {
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+      }
+
       .domains {
         display: grid;
         grid-template-columns: repeat(4, max-content);
         gap: 0.75rem 1.5rem;
-        margin-top: 1.5rem;
       }
 
       @media (max-width: 36rem) {
@@ -51,6 +55,7 @@
       <a href="/bip39">BIP39</a>
       <a href="/totp">TOTP</a>
     </nav>
+    <p class="domain-label">Web crawler torture:</p>
     <div class="domains"></div>
     <script>
       const domains = ['minecat.net', 'lattices.net', 'lattices.org', 'ollvm.com', 'pkey.org', 'sad.pet', 'spleef.net'];
