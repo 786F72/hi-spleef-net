@@ -116,9 +116,21 @@
       }
 
       strong {
+        display: flex;
         grid-column: 1 / -1;
         grid-row: 1;
+        align-items: center;
+        gap: 0.4rem;
+        min-width: 0;
         padding-right: 1.5rem;
+      }
+
+      strong img {
+        width: 1rem;
+        height: 1rem;
+      }
+
+      strong span {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -244,7 +256,19 @@
           const code = document.createElement('code');
           const time = document.createElement('span');
           const remove = document.createElement('button');
-          name.textContent = entry.name;
+          const label = document.createElement('span');
+          label.textContent = entry.name;
+          const domain = entry.name.match(/(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}/i)?.[0];
+          if (domain) {
+            const icon = document.createElement('img');
+            icon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+            icon.width = 16;
+            icon.height = 16;
+            icon.alt = '';
+            icon.addEventListener('error', () => icon.remove());
+            name.append(icon);
+          }
+          name.append(label);
           code.textContent = '······';
           time.className = 'timer';
           time.setAttribute('role', 'img');
