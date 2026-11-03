@@ -6,9 +6,16 @@
     <title>totp</title>
     <style>
       body {
-        max-width: 48rem;
+        max-width: 70rem;
         margin: 1rem;
         font: 14px/1.4 Arial, sans-serif;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+        align-items: start;
+        gap: 1.5rem;
       }
 
       form, main {
@@ -24,8 +31,12 @@
 
       main {
         grid-template-columns: minmax(0, 1fr);
-        max-width: 36rem;
-        margin-top: 1rem;
+        align-content: start;
+        min-height: 8rem;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+        padding: 0.5rem;
+        border: 1px solid #bbb;
       }
 
       label {
@@ -63,11 +74,23 @@
         width: 100%;
       }
 
+      @property --progress {
+        syntax: '<percentage>';
+        inherits: false;
+        initial-value: 100%;
+      }
+
+      @keyframes drain {
+        from { --progress: 100%; }
+        to { --progress: 0%; }
+      }
+
       .timer {
         width: 1rem;
         height: 1rem;
         border-radius: 50%;
         background: conic-gradient(#555 var(--progress), #ddd 0);
+        animation: drain 30s linear infinite;
       }
 
       strong {
@@ -80,21 +103,35 @@
         font-size: 1.3rem;
         font-variant-numeric: tabular-nums;
       }
+
+      @media (max-width: 40rem) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        main {
+          max-height: 50vh;
+        }
+      }
     </style>
   </head>
   <body>
-    <form id="add-form">
-      <label>Name <input name="name" required autocomplete="off"></label>
-      <label>Base32 secret <input name="secret" required autocomplete="off" spellcheck="false"></label>
-      <div class="actions">
-        <button>Add</button>
-        <button id="import-button" type="button">Import</button>
-        <button id="export-button" type="button">Export</button>
-        <input id="import-file" type="file" accept=".json,application/json" hidden>
-      </div>
-    </form>
-    <p id="message" role="status"></p>
-    <main id="codes"></main>
+    <div class="layout">
+      <section>
+        <form id="add-form">
+          <label>Name <input name="name" required autocomplete="off"></label>
+          <label>Base32 secret <input name="secret" required autocomplete="off" spellcheck="false"></label>
+          <div class="actions">
+            <button>Add</button>
+            <button id="import-button" type="button">Import</button>
+            <button id="export-button" type="button">Export</button>
+            <input id="import-file" type="file" accept=".json,application/json" hidden>
+          </div>
+        </form>
+        <p id="message" role="status"></p>
+      </section>
+      <main id="codes"></main>
+    </div>
     <script type="module">
       const storageKey = 'totp-secrets';
       const form = document.querySelector('#add-form');
@@ -111,9 +148,13 @@
         entries = [];
       }
 
+      function normalizeSecret(value) {
+        return value.toUpperCase().replace(/[\s-]/g, '').replace(/=+$/, '');
+      }
+
       function decodeBase32(value) {
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-        const clean = value.toUpperCase().replace(/[\s-]/g, '').replace(/=+$/, '');
+        const clean = normalizeSecret(value);
         if (!clean || /[^A-Z2-7]/.test(clean)) throw new Error('Enter a valid Base32 secret.');
 
         const bytes = [];
@@ -149,6 +190,24 @@
           ({ id, name, secret }))));
       }
 
+      const seen = new Set();
+      const unique = entries.filter(entry => {
+        if (!entry || typeof entry.name !== 'string' || typeof entry.secret !== 'string')
+          return false;
+        const secret = normalizeSecret(entry.secret);
+        try {
+          decodeBase32(secret);
+        } catch {
+          return false;
+        }
+        if (seen.has(secret)) return false;
+        seen.add(secret);
+        entry.secret = secret;
+        return true;
+      });
+      if (unique.length !== entries.length) save(unique);
+      entries = unique;
+
       function render() {
         list.replaceChildren();
         exportButton.disabled = entries.length === 0;
@@ -163,6 +222,7 @@
           code.textContent = '······';
           time.className = 'timer';
           time.setAttribute('role', 'img');
+          time.style.animationDelay = `-${Date.now() % 30000 / 1000}s`;
           copy.textContent = '⧉';
           copy.type = 'button';
           copy.title = 'Copy code';
@@ -197,7 +257,6 @@
         const counter = Math.floor(Date.now() / 30000);
         const remaining = 30 - Math.floor(Date.now() / 1000) % 30;
         for (const entry of entries) {
-          entry.time.style.setProperty('--progress', `${remaining / 30 * 100}%`);
           entry.time.setAttribute('aria-label', `${remaining} seconds left`);
           if (entry.counter === counter) continue;
           entry.counter = counter;
@@ -214,9 +273,11 @@
         event.preventDefault();
         try {
           const name = form.elements.name.value.trim();
-          const secret = form.elements.secret.value.trim().toUpperCase().replace(/[\s-]/g, '');
+          const secret = normalizeSecret(form.elements.secret.value.trim());
           if (!name) throw new Error('Enter a name.');
           decodeBase32(secret);
+          if (entries.some(entry => entry.secret === secret))
+            throw new Error('Secret already added.');
           const next = [...entries, { id: crypto.randomUUID(), name, secret }];
           save(next);
           entries = next;
@@ -235,13 +296,12 @@
         try {
           const data = JSON.parse(await importFile.files[0].text());
           if (data.version !== 1 || !Array.isArray(data.entries)) throw new Error();
-          const seen = new Set(entries.map(item => item.secret.toUpperCase()
-            .replace(/[\s-]/g, '').replace(/=+$/, '')));
+          const seen = new Set(entries.map(item => item.secret));
           const incoming = [];
           for (const item of data.entries) {
             if (typeof item.name !== 'string' || !item.name.trim() ||
                 typeof item.secret !== 'string') throw new Error();
-            const secret = item.secret.toUpperCase().replace(/[\s-]/g, '').replace(/=+$/, '');
+            const secret = normalizeSecret(item.secret);
             decodeBase32(secret);
             if (seen.has(secret)) continue;
             seen.add(secret);
