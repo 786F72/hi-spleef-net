@@ -14,6 +14,17 @@
         margin-top: 0;
       }
 
+      a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      a img {
+        width: 1rem;
+        height: 1rem;
+      }
+
       nav {
         display: grid;
         grid-template-columns: repeat(2, max-content);
@@ -22,10 +33,22 @@
     </style>
   </head>
   <body>
-    <p>Hi! Email me at alex@minecat.net.</p>
+    <p>Hi! Email me at <a href="mailto:alex@minecat.net">alex@minecat.net</a>.</p>
     <nav>
-      <a href="/bip39">bip39</a>
-      <a href="/totp">totp</a>
+      <a href="/bip39">BIP39</a>
+      <a href="/totp">TOTP</a>
     </nav>
+    <script>
+      for (const link of document.querySelectorAll('a')) {
+        const url = new URL(link.href);
+        const domain = url.protocol === 'mailto:' ? url.pathname.split('@')[1] : url.hostname;
+        if (!domain) continue;
+        const icon = new Image(16, 16);
+        icon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+        icon.alt = '';
+        icon.addEventListener('error', () => icon.remove());
+        link.prepend(icon);
+      }
+    </script>
   </body>
 </html>
