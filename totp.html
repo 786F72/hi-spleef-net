@@ -35,7 +35,7 @@
 
       article {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto auto;
+        grid-template-columns: minmax(0, 1fr) auto auto auto;
         align-items: center;
         gap: 0.75rem;
         padding: 0.5rem;
@@ -141,18 +141,32 @@
           const card = document.createElement('article');
           const name = document.createElement('strong');
           const code = document.createElement('code');
+          const copy = document.createElement('button');
           const remove = document.createElement('button');
           name.textContent = entry.name;
           code.textContent = '······';
-          remove.textContent = 'Remove';
+          copy.textContent = '⧉';
+          copy.type = 'button';
+          copy.title = 'Copy code';
+          copy.setAttribute('aria-label', `Copy code for ${entry.name}`);
+          copy.addEventListener('click', async () => {
+            try {
+              await navigator.clipboard.writeText(code.textContent);
+            } catch {
+              message.textContent = 'Could not copy code.';
+            }
+          });
+          remove.textContent = '×';
           remove.type = 'button';
+          remove.title = 'Remove';
+          remove.setAttribute('aria-label', `Remove ${entry.name}`);
           remove.addEventListener('click', () => {
             const next = entries.filter(item => item.id !== entry.id);
             save(next);
             entries = next;
             render();
           });
-          card.append(name, code, remove);
+          card.append(name, code, copy, remove);
           list.append(card);
           entry.code = code;
           entry.counter = -1;
