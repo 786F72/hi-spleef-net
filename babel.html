@@ -27,7 +27,7 @@
       <p>Babel is an experiment in procedural text generation and linked URL spaces. Each generated page contains 4,096 randomly selected entries from the English BIP39 word list. Generation is deterministic for a given URL. The output is a sequence of dictionary entries rather than a BIP39 recovery mnemonic.</p>
       <h2>Page generation</h2>
       <p>Each response includes seven links distributed across the project's seven domains in a random order. Destinations use a random 63-character alphanumeric subdomain and a random alphanumeric path after <code>/b/</code>. Each complete URL occupies a 16 KB budget.</p>
-      <p>Following a link generates another page. A deterministic generator is seeded with a SHA-256 hash of the complete URL. The same URL produces the same words and destinations, while different URLs produce different pages. Generated pages display white words on a white background, separated by black-highlighted spaces. Every other word has a very faint gray background.</p>
+      <p>Following a link generates another page. A deterministic generator is seeded with a SHA-256 hash of the complete URL. The same URL produces the same words and destinations, while different URLs produce different pages. Generated pages use black-highlighted spaces and alternating white and gray word blocks. The text within each block matches its background.</p>
       <h2>Search indexing</h2>
       <p>This description is the stable project page. Generated word pages carry search-indexing and link-following exclusion directives.</p>
       <p><a href="/b" rel="nofollow">Open Babel</a></p>

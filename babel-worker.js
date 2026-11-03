@@ -83,7 +83,8 @@ export default {
       }
 
       .shade {
-        background: #f7f7f7;
+        background: #efefef;
+        color: #efefef;
       }
 
       .space {
