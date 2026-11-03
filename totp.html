@@ -48,16 +48,8 @@
         font: inherit;
       }
 
-      article, input, button {
-        border-radius: 0.375rem;
-      }
-
-      article button {
-        display: grid;
-        place-items: center;
-        width: 1.75rem;
-        height: 1.75rem;
-        padding: 0;
+      button {
+        width: fit-content;
       }
 
       input::placeholder {
@@ -73,8 +65,6 @@
       .actions button {
         box-sizing: border-box;
         width: 100%;
-        height: 2rem;
-        padding: 0;
       }
 
       form input:not([type="file"]) {
@@ -131,9 +121,9 @@
           <input name="name" placeholder="Name" aria-label="Name" required autocomplete="off">
           <input name="secret" placeholder="Base32 Secret" aria-label="Base32 Secret" required autocomplete="off" spellcheck="false">
           <div class="actions">
-            <button type="submit" title="Add" aria-label="Add">➕</button>
-            <button id="import-button" type="button" title="Import" aria-label="Import">📥</button>
-            <button id="export-button" type="button" title="Export" aria-label="Export">📤</button>
+            <button>Add</button>
+            <button id="import-button" type="button">Import</button>
+            <button id="export-button" type="button">Export</button>
             <input id="import-file" type="file" accept=".json,application/json" hidden>
           </div>
         </form>
@@ -232,7 +222,7 @@
           time.className = 'timer';
           time.setAttribute('role', 'img');
           time.style.animationDelay = `-${Date.now() % 30000 / 1000}s`;
-          copy.textContent = '📋';
+          copy.textContent = '⧉';
           copy.type = 'button';
           copy.title = 'Copy code';
           copy.setAttribute('aria-label', `Copy code for ${entry.name}`);
@@ -243,7 +233,7 @@
               message.textContent = 'Could not copy code.';
             }
           });
-          remove.textContent = '❌';
+          remove.textContent = '×';
           remove.type = 'button';
           remove.title = 'Remove';
           remove.setAttribute('aria-label', `Remove ${entry.name}`);
