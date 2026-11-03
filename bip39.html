@@ -52,7 +52,7 @@
           event.preventDefault();
         });
       } catch {
-        document.body.textContent = 'Unable to generate words. Please reload.';
+        document.body.replaceChildren();
       }
     </script>
   </body>
