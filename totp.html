@@ -142,17 +142,6 @@
         font-variant-numeric: tabular-nums;
       }
 
-      .about {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-      }
-
-      .about img {
-        width: 1rem;
-        height: 1rem;
-      }
-
       @media (max-width: 40rem) {
         .layout {
           grid-template-columns: 1fr;
@@ -178,7 +167,6 @@
           </div>
         </form>
         <p id="message" role="status"></p>
-        <a class="about" href="/about/totp"><img id="about-icon" alt="">About</a>
       </section>
       <main id="codes"></main>
     </div>
@@ -382,8 +370,6 @@
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       });
 
-      document.querySelector('#about-icon').src =
-        `https://www.google.com/s2/favicons?domain=${encodeURIComponent(location.hostname)}&sz=32`;
       render();
       setInterval(update, 1000);
     </script>

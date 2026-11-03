@@ -15,13 +15,11 @@
 
       h1 { font-size: 1.5em; }
       h2 { font-size: 1.15em; }
-      nav { display: flex; gap: 1rem; }
       a { display: inline-flex; align-items: center; gap: 0.35rem; }
       a img { width: 1rem; height: 1rem; }
     </style>
   </head>
   <body>
-    <nav><a href="/">Home</a><a href="/bip39">BIP39</a><a href="/totp">TOTP</a><a href="/babel">Babel</a></nav>
     <main>
       <h1>Time-based one-time passwords</h1>
       <p>The Time-Based One-Time Password algorithm (TOTP) derives a short authentication code from a shared secret and a time counter. It extends the HMAC-Based One-Time Password algorithm by replacing its event counter with a value calculated from the current time.</p>
