@@ -3,10 +3,19 @@
   <head>
     <meta charset="utf-8">
     <title>Hi!</title>
+    <style>
+      nav {
+        display: grid;
+        grid-template-columns: repeat(2, max-content);
+        gap: 1rem;
+      }
+    </style>
   </head>
   <body>
     <p>Hi! Email me at alex@minecat.net.</p>
-    <a href="/bip39">bip39</a>
-    <a href="/totp">totp</a>
+    <nav>
+      <a href="/bip39">bip39</a>
+      <a href="/totp">totp</a>
+    </nav>
   </body>
 </html>
