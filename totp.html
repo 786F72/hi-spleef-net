@@ -35,10 +35,13 @@
       }
 
       article {
+        position: relative;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+        grid-template-columns: auto auto 1rem 1fr;
+        grid-template-rows: auto auto;
         align-items: center;
-        gap: 0.75rem;
+        column-gap: 0.5rem;
+        row-gap: 0.25rem;
         padding: 0.5rem;
         border: 1px solid #bbb;
       }
@@ -53,10 +56,28 @@
       }
 
       article button {
-        width: 1.75rem;
-        height: 1.75rem;
+        border: 0;
+        background: transparent;
+        color: #444;
+        cursor: pointer;
+      }
+
+      .copy {
+        grid-column: 1;
+        grid-row: 2;
+        width: 1.5rem;
         padding: 0;
-        font-family: monospace;
+        font-size: 1.2rem;
+      }
+
+      .remove {
+        position: absolute;
+        top: 0.2rem;
+        right: 0.35rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 0;
+        font-size: 0.9rem;
       }
 
       input::placeholder {
@@ -92,6 +113,8 @@
       }
 
       .timer {
+        grid-column: 3;
+        grid-row: 2;
         width: 1rem;
         height: 1rem;
         border-radius: 50%;
@@ -100,12 +123,17 @@
       }
 
       strong {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        padding-right: 1.5rem;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
       code {
+        grid-column: 2;
+        grid-row: 2;
         font-size: 1.3rem;
         font-variant-numeric: tabular-nums;
       }
@@ -229,7 +257,8 @@
           time.className = 'timer';
           time.setAttribute('role', 'img');
           time.style.animationDelay = `-${Date.now() % 30000 / 1000}s`;
-          copy.textContent = 'C';
+          copy.textContent = '⧉';
+          copy.className = 'copy';
           copy.type = 'button';
           copy.title = 'Copy code';
           copy.setAttribute('aria-label', `Copy code for ${entry.name}`);
@@ -240,7 +269,8 @@
               message.textContent = 'Could not copy code.';
             }
           });
-          remove.textContent = 'X';
+          remove.textContent = 'x';
+          remove.className = 'remove';
           remove.type = 'button';
           remove.title = 'Remove';
           remove.setAttribute('aria-label', `Remove ${entry.name}`);
@@ -250,7 +280,7 @@
             entries = next;
             render();
           });
-          card.append(name, time, code, copy, remove);
+          card.append(name, copy, code, time, remove);
           list.append(card);
           entry.code = code;
           entry.time = time;
