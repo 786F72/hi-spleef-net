@@ -5,7 +5,7 @@ const words = list.trim().split('\n');
 const domains = ['minecat.net', 'lattices.net', 'lattices.org', 'ollvm.com', 'pkey.org', 'sad.pet', 'spleef.net'];
 
 export default {
-  fetch(request) {
+  async fetch(request) {
     const url = new URL(request.url);
     const host = url.hostname;
     const domain = domains.find(domain => host === domain || host.endsWith('.' + domain));
@@ -27,14 +27,28 @@ export default {
       });
     }
 
+    const seed = new DataView(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(url.href)));
+    let a = seed.getUint32(0);
+    let b = seed.getUint32(4);
+    let c = seed.getUint32(8);
+    let d = seed.getUint32(12);
+
+    function next() {
+      const value = (a + b + d) | 0;
+      d = (d + 1) | 0;
+      a = b ^ (b >>> 9);
+      b = (c + (c << 3)) | 0;
+      c = ((c << 21) | (c >>> 11)) + value | 0;
+      return value >>> 0;
+    }
+
     function random(length, alphabet) {
-      return Array.from(crypto.getRandomValues(new Uint8Array(length)),
-        value => alphabet[value % alphabet.length]).join('');
+      return Array.from({ length }, () => alphabet[next() % alphabet.length]).join('');
     }
 
     const targets = [...domains];
     for (let index = targets.length - 1; index > 0; index--) {
-      const pick = crypto.getRandomValues(new Uint32Array(1))[0] % (index + 1);
+      const pick = next() % (index + 1);
       [targets[index], targets[pick]] = [targets[pick], targets[index]];
     }
     const links = targets.map((target, index) => {
@@ -43,7 +57,7 @@ export default {
       const path = random(16384 - prefix.length, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
       return `<a href="${prefix}${path}" rel="nofollow"><img src="https://www.google.com/s2/favicons?domain=${target}&amp;sz=32" alt="" width="16" height="16">Page ${index + 1}</a>`;
     }).join('\n');
-    const text = Array.from(crypto.getRandomValues(new Uint16Array(4096)), value => words[value & 2047]) .join('<span class="space"> </span>');
+    const text = Array.from({ length: 4096 }, () => words[next() & 2047]).join('<span class="space"> </span><wbr>');
     const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -61,6 +75,8 @@ export default {
 
       main {
         color: #fff;
+        white-space: normal;
+        overflow-wrap: anywhere;
       }
 
       .space {

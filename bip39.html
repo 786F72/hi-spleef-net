@@ -12,6 +12,18 @@
         font: clamp(12px, 3vw, 16px)/1.5 system-ui, sans-serif;
       }
 
+      .about {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 1.5rem;
+      }
+
+      .about img {
+        width: 1rem;
+        height: 1rem;
+      }
+
       main {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -46,7 +58,14 @@
           grid.append(cell);
         });
 
-        document.body.replaceChildren(grid);
+        const about = document.createElement('a');
+        about.href = '/about/bip39';
+        about.className = 'about';
+        const icon = document.createElement('img');
+        icon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(location.hostname)}&sz=32`;
+        icon.alt = '';
+        about.append(icon, 'About');
+        document.body.replaceChildren(grid, about);
         document.addEventListener('copy', event => {
           const text = window.getSelection().toString().trim().replace(/\s+/g, ' ');
           if (!text) return;
