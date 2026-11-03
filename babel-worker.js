@@ -57,7 +57,10 @@ export default {
       const path = random(16384 - prefix.length, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
       return `<a href="${prefix}${path}" rel="nofollow"><img src="https://www.google.com/s2/favicons?domain=${target}&amp;sz=32" alt="" width="16" height="16">Page ${index + 1}</a>`;
     }).join('\n');
-    const text = Array.from({ length: 4096 }, () => words[next() & 2047]).join('<span class="space"> </span><wbr>');
+    const text = Array.from({ length: 4096 }, (_, index) => {
+      const word = words[next() & 2047];
+      return index % 2 ? `<span class="shade">${word}</span>` : word;
+    }).join('<span class="space"> </span><wbr>');
     const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -77,6 +80,10 @@ export default {
         color: #fff;
         white-space: normal;
         overflow-wrap: anywhere;
+      }
+
+      .shade {
+        background: #f7f7f7;
       }
 
       .space {
