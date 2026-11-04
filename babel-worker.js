@@ -47,7 +47,7 @@ export default {
       let response;
       try {
         response = await fetch(image.href, {
-          redirect: 'manual',
+          redirect: 'follow',
           signal: AbortSignal.timeout(10000),
           cf: { cacheEverything: true, cacheTtl: 604800 }
         });
@@ -213,6 +213,7 @@ export default {
 
       async function load() {
         const cache = await caches.open('babel-avatars-v1').catch(() => null);
+        let paused = false;
         for (const image of document.querySelectorAll('img[data-avatar]')) {
           try {
             const key = '/babel/avatar/' + image.dataset.avatar;
@@ -222,8 +223,12 @@ export default {
               continue;
             }
 
+            if (paused) continue;
             const response = await fetch(key + '?v=2', { signal: controller.signal });
-            if (response.status === 503 || response.status === 429) break;
+            if (response.status === 503 || response.status === 429) {
+              paused = true;
+              continue;
+            }
             if (response.ok) {
               const avatar = await response.json();
               const picture = await fetch('/babel/image?url=' + encodeURIComponent(avatar.url), {
@@ -240,7 +245,8 @@ export default {
               image.remove();
             }
           } catch {
-            break;
+            if (controller.signal.aborted) break;
+            paused = true;
           }
           await new Promise(resolve => setTimeout(resolve, 1000));
           if (controller.signal.aborted) break;
