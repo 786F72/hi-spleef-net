@@ -1,9 +1,16 @@
 import landing from './babel.html';
 
+function unavailable(seconds) {
+  return new Response(null, {
+    status: 503,
+    headers: { 'Retry-After': String(seconds), 'Cache-Control': 'no-store' }
+  });
+}
+
 const domains = ['minecat.net', 'lattices.net', 'lattices.org', 'ollvm.com', 'pkey.org', 'sad.pet', 'spleef.net'];
 
 export default {
-  async fetch(request, env, context) {
+  async fetch(request) {
     const url = new URL(request.url);
     const host = url.hostname;
     const domain = domains.find(domain => host === domain || host.endsWith('.' + domain));
@@ -31,47 +38,62 @@ export default {
       if (!/^[1-9]\d{0,9}$/.test(value) || account > 4294967295)
         return new Response(null, { status: 404 });
 
-      const key = new Request(`https://minecat.net/babel/avatar/${account}`);
+      const key = new Request(`https://minecat.net/babel/avatar/${account}?v=2`);
       const cached = await caches.default.match(key);
       if (cached) return cached;
 
-      for (let attempt = 0; attempt < 12; attempt++) {
-        const candidate = ((account + Math.imul(attempt, 0x9e3779b9)) >>> 0) || 1;
-        const steam = 76561197960265728n + BigInt(candidate);
-        let profile;
-        try {
-          profile = await fetch(`https://steamcommunity.com/profiles/${steam}/`, {
-            signal: AbortSignal.timeout(6000)
-          });
-        } catch {
-          return new Response(null, { status: 503, headers: { 'Retry-After': '60' } });
-        }
-        if (profile.status === 429 || profile.status >= 500)
-          return new Response(null, { status: 503, headers: { 'Retry-After': '60' } });
-        if (!profile.ok) continue;
+      const cooldownKey = new Request('https://minecat.net/babel/steam-cooldown');
+      const cooldown = await caches.default.match(cooldownKey);
+      const until = cooldown ? Number(await cooldown.text()) : 0;
+      if (until > Date.now()) return unavailable(Math.ceil((until - Date.now()) / 1000));
 
-        let avatar;
+      async function pause(seconds) {
+        await caches.default.put(cooldownKey, new Response(String(Date.now() + seconds * 1000), {
+          headers: { 'Cache-Control': `public, max-age=${seconds}` }
+        }));
+        return unavailable(seconds);
+      }
+
+      const steam = 76561197960265728n + BigInt(account);
+      let profile;
+      try {
+        profile = await fetch(`https://steamcommunity.com/profiles/${steam}/`, {
+          signal: AbortSignal.timeout(6000)
+        });
+      } catch {
+        return pause(60);
+      }
+      if (profile.status === 403 || profile.status === 429 || profile.status >= 500) {
+        const retry = profile.headers.get('Retry-After');
+        const seconds = /^\d+$/.test(retry || '') ? Number(retry) : (Date.parse(retry) - Date.now()) / 1000;
+        return pause(Math.max(600, Math.ceil(seconds) || 0));
+      }
+      if (!profile.ok && profile.status !== 404) return pause(60);
+
+      let avatar;
+      if (profile.ok) {
         await new HTMLRewriter().on('.playerAvatarAutoSizeInner img', {
           element(element) {
             avatar = element.getAttribute('src') || element.getAttribute('srcset')?.split(/[ ,]/)[0];
           }
         }).transform(profile).text();
-        if (!avatar) continue;
-        const image = new URL(avatar);
-        if (!image.hostname.endsWith('.steamstatic.com') && !image.hostname.endsWith('.steamusercontent.com')) continue;
-
-        const response = new Response(null, {
-          status: 302,
-          headers: {
-            Location: image.href,
-            'Cache-Control': 'public, max-age=86400',
-            'X-Robots-Tag': 'noindex, nofollow'
-          }
-        });
-        context.waitUntil(caches.default.put(key, response.clone()));
-        return response;
       }
-      return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+      let image;
+      try {
+        image = new URL(avatar);
+      } catch {}
+      const valid = image?.protocol === 'https:' && (
+        image.hostname.endsWith('.steamstatic.com') || image.hostname.endsWith('.steamusercontent.com')
+      );
+      const response = Response.json(valid ? { url: image.href } : {}, {
+        status: valid ? 200 : 404,
+        headers: {
+          'Cache-Control': `public, max-age=${valid ? 604800 : 86400}`,
+          'X-Robots-Tag': 'noindex, nofollow'
+        }
+      });
+      await caches.default.put(key, response.clone());
+      return response;
     }
 
     if (url.pathname === '/b' || url.pathname.startsWith('/b/')) {
@@ -98,23 +120,10 @@ export default {
       return value >>> 0;
     }
 
-    function random(length, alphabet) {
-      return Array.from({ length }, () => alphabet[next() % alphabet.length]).join('');
-    }
-
-    const targets = [...domains];
-    for (let index = targets.length - 1; index > 0; index--) {
-      const pick = next() % (index + 1);
-      [targets[index], targets[pick]] = [targets[pick], targets[index]];
-    }
-    const destinations = targets.map(target => {
-      const host = random(63, 'abcdefghijklmnopqrstuvwxyz0123456789');
-      const prefix = `https://${host}.${target}/babel/`;
-      return prefix + random(16384 - prefix.length, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
-    });
-    const tiles = Array.from({ length: 16 }, (_, index) => {
+    const tiles = Array.from({ length: 16 }, () => {
       const account = next() || 1;
-      return `<a data-page="${index % 7}" rel="nofollow" aria-label="Next Babel page"><img data-avatar="${account}" alt="" width="119" height="119"></a>`;
+      const profile = 76561197960265728n + BigInt(account);
+      return `<a href="https://steamcommunity.com/profiles/${profile}/" rel="nofollow" aria-label="Open Steam profile"><img data-avatar="${account}" alt="" width="119" height="119"></a>`;
     }).join('\n');
     const html = `<!doctype html>
 <html lang="en">
@@ -155,27 +164,31 @@ export default {
   <body>
     <main>${tiles}</main>
     <script>
-      const destinations = ${JSON.stringify(destinations)};
-      for (const link of document.querySelectorAll('main a')) {
-        link.href = destinations[Number(link.dataset.page)];
-      }
+      const controller = new AbortController();
+      addEventListener('pagehide', () => controller.abort());
 
-      const images = [...document.querySelectorAll('img[data-avatar]')];
       async function load() {
-        while (images.length) {
-          const image = images.shift();
-          await new Promise(resolve => {
-            image.onload = resolve;
-            image.onerror = () => {
-              image.parentElement.title = 'Avatar unavailable';
+        for (const image of document.querySelectorAll('img[data-avatar]')) {
+          try {
+            const response = await fetch('/babel/avatar/' + image.dataset.avatar + '?v=2', {
+              signal: controller.signal
+            });
+            if (response.status === 503 || response.status === 429) break;
+            if (response.ok) {
+              const avatar = await response.json();
+              image.onerror = () => image.remove();
+              image.src = avatar.url;
+            } else {
               image.remove();
-              resolve();
-            };
-            image.src = '/babel/avatar/' + image.dataset.avatar;
-          });
+            }
+          } catch {
+            break;
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (controller.signal.aborted) break;
         }
       }
-      for (let index = 0; index < 4; index++) load();
+      load();
     </script>
   </body>
 </html>`;
