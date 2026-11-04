@@ -96,7 +96,7 @@ export default {
         return unavailable(seconds);
       }
 
-      const steam = 76561197960265728n + BigInt(account);
+      const steam = 76561197960265729n + BigInt(account - 1);
       let profile;
       try {
         profile = await fetch(`https://steamcommunity.com/profiles/${steam}/`, {
@@ -166,7 +166,7 @@ export default {
 
     const tiles = Array.from({ length: 16 }, () => {
       const account = next() || 1;
-      const profile = 76561197960265728n + BigInt(account);
+      const profile = 76561197960265729n + BigInt(account - 1);
       return `<a href="https://steamcommunity.com/profiles/${profile}/" target="_blank" rel="nofollow noopener noreferrer" aria-label="Open Steam profile"><img data-avatar="${account}" alt="" width="119" height="119"></a>`;
     }).join('\n');
     const html = `<!doctype html>
