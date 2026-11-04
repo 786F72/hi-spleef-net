@@ -40,7 +40,7 @@ export default {
         const steam = 76561197960265728n + BigInt(candidate);
         let profile;
         try {
-          profile = await fetch(`https://steamcommunity.com/profiles/${steam}/?xml=1`, {
+          profile = await fetch(`https://steamcommunity.com/profiles/${steam}/`, {
             signal: AbortSignal.timeout(6000)
           });
         } catch {
@@ -50,8 +50,12 @@ export default {
           return new Response(null, { status: 503, headers: { 'Retry-After': '60' } });
         if (!profile.ok) continue;
 
-        const xml = await profile.text();
-        const avatar = xml.match(/<avatarFull><!\[CDATA\[(https:\/\/[^\]]+)\]\]><\/avatarFull>/)?.[1];
+        let avatar;
+        await new HTMLRewriter().on('.playerAvatarAutoSizeInner img', {
+          element(element) {
+            avatar = element.getAttribute('src') || element.getAttribute('srcset')?.split(/[ ,]/)[0];
+          }
+        }).transform(profile).text();
         if (!avatar) continue;
         const image = new URL(avatar);
         if (!image.hostname.endsWith('.steamstatic.com') && !image.hostname.endsWith('.steamusercontent.com')) continue;
@@ -163,8 +167,8 @@ export default {
           await new Promise(resolve => {
             image.onload = resolve;
             image.onerror = () => {
-              image.hidden = true;
               image.parentElement.title = 'Avatar unavailable';
+              image.remove();
               resolve();
             };
             image.src = '/babel/avatar/' + image.dataset.avatar;
