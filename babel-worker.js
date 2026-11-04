@@ -67,9 +67,8 @@ export default {
     });
     const text = Array.from({ length: 4096 }, (_, index) => {
       const word = words[next() & 2047];
-      const shade = index % 2 ? ' shade' : '';
-      return `<a class="word${shade}" data-page="${index % 7}" rel="nofollow">${word}</a>`;
-    }).join('<span class="space"> </span><wbr>');
+      return `<a class="word" data-page="${index % 7}" rel="nofollow">${word}</a>`;
+    }).join(' ');
     const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -86,27 +85,18 @@ export default {
       }
 
       main {
-        color: #fff;
-        white-space: normal;
-        overflow-wrap: anywhere;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(10ch, 1fr));
+        column-gap: 1.5ch;
+        row-gap: 0.25rem;
       }
 
       .word {
         color: inherit;
         text-decoration: none;
+        white-space: nowrap;
         cursor: default;
       }
-
-      .shade {
-        background: #efefef;
-        color: #efefef;
-      }
-
-      .space {
-        background: #000;
-        white-space: pre;
-      }
-
     </style>
   </head>
   <body>
