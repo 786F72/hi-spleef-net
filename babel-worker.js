@@ -160,7 +160,7 @@ export default {
     const tiles = Array.from({ length: 16 }, () => {
       const account = next() || 1;
       const profile = 76561197960265728n + BigInt(account);
-      return `<a href="https://steamcommunity.com/profiles/${profile}/" rel="nofollow" aria-label="Open Steam profile"><img data-avatar="${account}" alt="" width="119" height="119"></a>`;
+      return `<a href="https://steamcommunity.com/profiles/${profile}/" target="_blank" rel="nofollow noopener noreferrer" aria-label="Open Steam profile"><img data-avatar="${account}" alt="" width="119" height="119"></a>`;
     }).join('\n');
     const html = `<!doctype html>
 <html lang="en">
@@ -251,7 +251,8 @@ export default {
           const key = '/babel/avatar/' + image.dataset.avatar;
           const saved = await cache?.match(key).catch(() => null);
           if (saved) {
-            show(image, await saved.blob());
+            if (saved.status === 200) show(image, await saved.blob());
+            else image.remove();
             return null;
           }
           return { image, key };
@@ -262,6 +263,7 @@ export default {
           const { image, key } = tile;
           const started = Date.now();
           try {
+            if (cache) await cache.put(key, new Response(null, { status: 204 })).catch(() => {});
             const response = await fetch(key + '?v=2', { signal: controller.signal });
             if (response.status === 503 || response.status === 429) break;
             if (response.ok) {
