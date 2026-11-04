@@ -21,18 +21,23 @@ export default {
     if (url.pathname === '/robots.txt') {
       const robots = host === domain
         ? 'User-agent: *\nAllow: /\nSitemap: https://minecat.net/sitemap.xml\n'
-        : 'User-agent: *\nAllow: /b\nDisallow: /\n';
+        : 'User-agent: *\nAllow: /avatar-rng\nDisallow: /\n';
       return new Response(request.method === 'HEAD' ? null : robots, {
         headers: { 'Content-Type': 'text/plain; charset=utf-8' }
       });
     }
-    if (host === domain && url.pathname === '/about/babel') {
+    if (host === domain && url.pathname === '/about/avatar-rng') {
       return new Response(request.method === 'HEAD' ? null : landing, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' }
       });
     }
 
-    if (url.pathname === '/babel/image') {
+    if (url.pathname === '/about/babel' || url.pathname === '/babel' || url.pathname.startsWith('/babel/')) {
+      url.pathname = url.pathname.replace('/babel', '/avatar-rng');
+      return Response.redirect(url.href, 301);
+    }
+
+    if (url.pathname === '/avatar-rng/image') {
       let image;
       try {
         image = new URL(url.searchParams.get('url'));
@@ -65,8 +70,8 @@ export default {
       });
     }
 
-    if (url.pathname.startsWith('/babel/avatar/')) {
-      const value = url.pathname.slice('/babel/avatar/'.length);
+    if (url.pathname.startsWith('/avatar-rng/avatar/')) {
+      const value = url.pathname.slice('/avatar-rng/avatar/'.length);
       const account = Number(value);
       if (!/^[1-9]\d{0,9}$/.test(value) || account > 4294967295)
         return new Response(null, { status: 404 });
@@ -134,14 +139,16 @@ export default {
     }
 
     if (url.pathname === '/b' || url.pathname.startsWith('/b/')) {
-      url.pathname = '/babel' + url.pathname.slice(2);
+      url.pathname = '/avatar-rng' + url.pathname.slice(2);
       return new Response(null, {
         status: 301,
         headers: { Location: url.href, 'X-Robots-Tag': 'noindex, nofollow' }
       });
     }
 
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(url.href));
+    const seedURL = new URL(url);
+    seedURL.pathname = seedURL.pathname.replace(/^\/avatar-rng(?=\/|$)/, '/babel');
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(seedURL.href));
     const seed = new DataView(digest);
     let a = seed.getUint32(0);
     let b = seed.getUint32(4);
@@ -167,7 +174,7 @@ export default {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>babel</title>
+    <title>avatar-rng</title>
     <meta name="robots" content="noindex, nofollow">
     <style>
       body {
@@ -210,7 +217,7 @@ export default {
       document.getElementById('new').addEventListener('click', () => {
         const seed = crypto.getRandomValues(new Uint8Array(16));
         const path = [...seed].map(value => value.toString(16).padStart(2, '0')).join('');
-        location.assign('/babel/' + path);
+        location.assign('/avatar-rng/' + path);
       });
 
       const controller = new AbortController();
@@ -229,7 +236,7 @@ export default {
 
       async function fetchPicture(image, url, cache, key) {
         try {
-          const response = await fetch('/babel/image?url=' + encodeURIComponent(url), {
+          const response = await fetch('/avatar-rng/image?url=' + encodeURIComponent(url), {
             signal: controller.signal
           });
           if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/')) {
@@ -264,7 +271,7 @@ export default {
           const started = Date.now();
           try {
             if (cache) await cache.put(key, new Response(null, { status: 204 })).catch(() => {});
-            const response = await fetch(key + '?v=2', { signal: controller.signal });
+            const response = await fetch('/avatar-rng/avatar/' + image.dataset.avatar + '?v=2', { signal: controller.signal });
             if (response.status === 503 || response.status === 429) break;
             if (response.ok) {
               const avatar = await response.json();
