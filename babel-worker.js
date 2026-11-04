@@ -65,7 +65,7 @@ export default {
       const prefix = `https://${host}.${target}/babel/`;
       return prefix + random(16384 - prefix.length, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
     });
-    const text = Array.from({ length: 4096 }, (_, index) => {
+    const text = Array.from({ length: 12 }, (_, index) => {
       const word = words[next() & 2047];
       return `<a class="word" data-page="${index % 7}" rel="nofollow">${word}</a>`;
     }).join(' ');
@@ -86,7 +86,8 @@ export default {
 
       main {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(10ch, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        max-width: 40ch;
         column-gap: 1.5ch;
         row-gap: 0.25rem;
       }
