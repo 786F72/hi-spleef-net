@@ -32,6 +32,34 @@ export default {
       });
     }
 
+    if (url.pathname === '/babel/image') {
+      let image;
+      try {
+        image = new URL(url.searchParams.get('url'));
+      } catch {
+        return new Response(null, { status: 400 });
+      }
+      if (image.protocol !== 'https:' || !image.hostname.startsWith('avatars.') ||
+          (!image.hostname.endsWith('.steamstatic.com') && !image.hostname.endsWith('.steamusercontent.com')) ||
+          image.port || image.username || image.password)
+        return new Response(null, { status: 400 });
+
+      const response = await fetch(image.href, {
+        redirect: 'error',
+        signal: AbortSignal.timeout(10000),
+        cf: { cacheEverything: true, cacheTtl: 604800 }
+      });
+      if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/'))
+        return new Response(null, { status: 502 });
+      return new Response(request.method === 'HEAD' ? null : response.body, {
+        headers: {
+          'Content-Type': response.headers.get('Content-Type'),
+          'Cache-Control': 'public, max-age=604800',
+          'X-Robots-Tag': 'noindex, nofollow'
+        }
+      });
+    }
+
     if (url.pathname.startsWith('/babel/avatar/')) {
       const value = url.pathname.slice('/babel/avatar/'.length);
       const account = Number(value);
@@ -165,19 +193,44 @@ export default {
     <main>${tiles}</main>
     <script>
       const controller = new AbortController();
-      addEventListener('pagehide', () => controller.abort());
+      const pictures = new Set();
+      addEventListener('pagehide', () => {
+        controller.abort();
+        for (const picture of pictures) URL.revokeObjectURL(picture);
+      });
+
+      function show(image, blob) {
+        const picture = URL.createObjectURL(blob);
+        pictures.add(picture);
+        image.onerror = () => image.remove();
+        image.src = picture;
+      }
 
       async function load() {
+        const cache = await caches.open('babel-avatars-v1').catch(() => null);
         for (const image of document.querySelectorAll('img[data-avatar]')) {
           try {
-            const response = await fetch('/babel/avatar/' + image.dataset.avatar + '?v=2', {
-              signal: controller.signal
-            });
+            const key = '/babel/avatar/' + image.dataset.avatar;
+            const saved = await cache?.match(key).catch(() => null);
+            if (saved) {
+              show(image, await saved.blob());
+              continue;
+            }
+
+            const response = await fetch(key + '?v=2', { signal: controller.signal });
             if (response.status === 503 || response.status === 429) break;
             if (response.ok) {
               const avatar = await response.json();
-              image.onerror = () => image.remove();
-              image.src = avatar.url;
+              const picture = await fetch('/babel/image?url=' + encodeURIComponent(avatar.url), {
+                signal: controller.signal
+              });
+              if (picture.ok && picture.headers.get('Content-Type')?.startsWith('image/')) {
+                const blob = await picture.blob();
+                if (cache) await cache.put(key, new Response(blob)).catch(() => {});
+                show(image, blob);
+              } else {
+                image.remove();
+              }
             } else {
               image.remove();
             }
