@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TOTP: time-based one-time passwords | Alex Rother</title>
+    <title>totp</title>
     <meta name="description" content="An explanation of time-based one-time passwords, shared secrets, time steps, and the local TOTP tool.">
     <link rel="canonical" href="https://minecat.net/about/totp">
     <style>
@@ -21,7 +21,7 @@
   </head>
   <body>
     <main>
-      <h1>Time-based one-time passwords</h1>
+      <h1>totp</h1>
       <p>The Time-Based One-Time Password algorithm (TOTP) derives a short authentication code from a shared secret and a time counter. It extends the HMAC-Based One-Time Password algorithm by replacing its event counter with a value calculated from the current time.</p>
       <h2>Time steps</h2>
       <p>RFC 6238 recommends a default interval of 30 seconds. The client and verifier calculate a counter from the Unix time and the selected interval. Their clocks must be sufficiently synchronized for the verifier to accept the generated code.</p>

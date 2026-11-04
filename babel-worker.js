@@ -74,7 +74,7 @@ export default {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Babel — generated page</title>
+    <title>babel</title>
     <meta name="robots" content="noindex, nofollow">
     <style>
       body {
