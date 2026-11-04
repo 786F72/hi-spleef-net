@@ -164,7 +164,7 @@ export default {
       return value >>> 0;
     }
 
-    const accountLimit = 1800000000;
+    const accountLimit = 1700000000;
     const ceiling = 0x100000000 - (0x100000000 % accountLimit);
     const tiles = Array.from({ length: 16 }, () => {
       let value;
