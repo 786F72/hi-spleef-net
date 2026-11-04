@@ -22,10 +22,10 @@
   <body>
     <main>
       <h1>Babel</h1>
-      <p>Babel is an experiment in procedural text generation and linked URL spaces. Each generated page contains 12 entries arranged in four columns and three rows, selected from the English BIP39 word list. Generation is deterministic for a given URL. The output is a sequence of dictionary entries rather than a BIP39 recovery mnemonic.</p>
+      <p>Babel is an experiment in procedural text generation and linked URL spaces. Each generated page contains 16 entries arranged in four columns and four rows, selected from the English BIP39 word list. Generation is deterministic for a given URL. The output is a sequence of dictionary entries rather than a BIP39 recovery mnemonic.</p>
       <h2>Page generation</h2>
       <p>Each word links to one of seven generated destinations distributed across the project's seven domains in a random order. Destinations use a random 63-character alphanumeric subdomain and a random alphanumeric path after <code>/babel/</code>. Each complete URL occupies a 16 KB budget.</p>
-      <p>Following a link generates another page. A deterministic generator is seeded with a SHA-256 hash of the complete URL. The same URL produces the same words and destinations, while different URLs produce different pages. Generated pages display black text on a white background, arranged in a four-column, three-row grid.</p>
+      <p>Following a link generates another page. A deterministic generator is seeded with a SHA-256 hash of the complete URL. The same URL produces the same words and destinations, while different URLs produce different pages. Generated pages display black text on a white background, arranged in a four-column, four-row grid.</p>
       <h2>Search indexing</h2>
       <p>This description is the stable project page. Generated word pages carry search-indexing and link-following exclusion directives.</p>
       <p><a href="/babel" rel="nofollow">Open Babel</a></p>
