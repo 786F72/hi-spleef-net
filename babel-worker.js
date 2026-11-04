@@ -44,11 +44,16 @@ export default {
           image.port || image.username || image.password)
         return new Response(null, { status: 400 });
 
-      const response = await fetch(image.href, {
-        redirect: 'error',
-        signal: AbortSignal.timeout(10000),
-        cf: { cacheEverything: true, cacheTtl: 604800 }
-      });
+      let response;
+      try {
+        response = await fetch(image.href, {
+          redirect: 'manual',
+          signal: AbortSignal.timeout(10000),
+          cf: { cacheEverything: true, cacheTtl: 604800 }
+        });
+      } catch {
+        return new Response(null, { status: 502 });
+      }
       if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/'))
         return new Response(null, { status: 502 });
       return new Response(request.method === 'HEAD' ? null : response.body, {
