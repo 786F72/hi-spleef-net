@@ -73,7 +73,11 @@ export default {
 
       const key = new Request(`https://minecat.net/babel/avatar/${account}?v=2`);
       const cached = await caches.default.match(key);
-      if (cached) return cached;
+      if (cached) {
+        const response = new Response(cached.body, cached);
+        response.headers.set('X-Avatar-Cached', '1');
+        return response;
+      }
 
       const cooldownKey = new Request('https://minecat.net/babel/steam-cooldown');
       const cooldown = await caches.default.match(cooldownKey);
@@ -173,6 +177,11 @@ export default {
         font: clamp(12px, 3vw, 16px)/1.5 system-ui, sans-serif;
       }
 
+      button {
+        margin-bottom: 0.75rem;
+        font: inherit;
+      }
+
       main {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -195,8 +204,15 @@ export default {
     </style>
   </head>
   <body>
+    <button type="button" id="new">new</button>
     <main>${tiles}</main>
     <script>
+      document.getElementById('new').addEventListener('click', () => {
+        const seed = crypto.getRandomValues(new Uint8Array(16));
+        const path = [...seed].map(value => value.toString(16).padStart(2, '0')).join('');
+        location.assign('/babel/' + path);
+      });
+
       const controller = new AbortController();
       const pictures = new Set();
       addEventListener('pagehide', () => {
@@ -211,46 +227,58 @@ export default {
         image.src = picture;
       }
 
+      async function fetchPicture(image, url, cache, key) {
+        try {
+          const response = await fetch('/babel/image?url=' + encodeURIComponent(url), {
+            signal: controller.signal
+          });
+          if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/')) {
+            image.remove();
+            return;
+          }
+          const blob = await response.blob();
+          show(image, blob);
+          if (cache) await cache.put(key, new Response(blob)).catch(() => {});
+        } catch {
+          image.remove();
+        }
+      }
+
       async function load() {
         const cache = await caches.open('babel-avatars-v1').catch(() => null);
-        let paused = false;
-        for (const image of document.querySelectorAll('img[data-avatar]')) {
+        const images = [...document.querySelectorAll('img[data-avatar]')];
+        const pending = await Promise.all(images.map(async image => {
+          const key = '/babel/avatar/' + image.dataset.avatar;
+          const saved = await cache?.match(key).catch(() => null);
+          if (saved) {
+            show(image, await saved.blob());
+            return null;
+          }
+          return { image, key };
+        }));
+        const downloads = [];
+        for (const tile of pending.filter(Boolean)) {
+          if (controller.signal.aborted) break;
+          const { image, key } = tile;
+          const started = Date.now();
           try {
-            const key = '/babel/avatar/' + image.dataset.avatar;
-            const saved = await cache?.match(key).catch(() => null);
-            if (saved) {
-              show(image, await saved.blob());
-              continue;
-            }
-
-            if (paused) continue;
             const response = await fetch(key + '?v=2', { signal: controller.signal });
-            if (response.status === 503 || response.status === 429) {
-              paused = true;
-              continue;
-            }
+            if (response.status === 503 || response.status === 429) break;
             if (response.ok) {
               const avatar = await response.json();
-              const picture = await fetch('/babel/image?url=' + encodeURIComponent(avatar.url), {
-                signal: controller.signal
-              });
-              if (picture.ok && picture.headers.get('Content-Type')?.startsWith('image/')) {
-                const blob = await picture.blob();
-                if (cache) await cache.put(key, new Response(blob)).catch(() => {});
-                show(image, blob);
-              } else {
-                image.remove();
-              }
+              downloads.push(fetchPicture(image, avatar.url, cache, key));
             } else {
               image.remove();
             }
+            if (response.headers.get('X-Avatar-Cached') !== '1') {
+              const delay = Math.max(0, 1000 - (Date.now() - started));
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
           } catch {
-            if (controller.signal.aborted) break;
-            paused = true;
+            break;
           }
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          if (controller.signal.aborted) break;
         }
+        await Promise.all(downloads);
       }
       load();
     </script>
